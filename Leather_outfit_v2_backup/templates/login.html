@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Новый стиль хедера */
+        header {
+            background: #111;
+            position: fixed;
+            width: 100%;
+            z-index: 800;
+            padding: 0;
+        }
+
+        nav {
+            position: fixed;
+            width: 100%;
+            background: rgba(17, 17, 17, 0.9);
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        .logo {
+            height: 75px;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo:before, .logo:after {
+            position: absolute;
+            font-size: 7em;
+            font-weight: 300;
+            line-height: 0;
+            color: #fff;
+            top: 25px;
+        }
+
+        .logo:before {
+            content: '\00BB';
+            left: 20px;
+        }
+
+        .logo:after {
+            content: '\00AB';
+            left: 34px;
+        }
+
+        .logo h1 {
+            color: #fff;
+            font-size: 1.5em;
+            margin-left: 60px;
+            font-weight: 400;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 25px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        nav li {
+            margin: 0 10px;
+        }
+
+        nav a {
+            font-size: 0.9em;
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #ccc;
+        }
+
+        .search-form {
+            display: flex;
+            max-width: 400px;
+            margin: 0 1rem;
+        }
+
+        .search-input {
+            padding: 0.5rem;
+            flex-grow: 1;
+            border-radius: 5px 0 0 5px;
+            border: none;
+            background: #333;
+            color: #e0e0e0;
+        }
+
+        .search-button {
+            padding: 0.5rem 1rem;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-button {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .upload-button:hover {
+            background: #666;
+        }
+
+        .user-info img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #444;
+            object-fit: cover;
+        }
+
+        .user-info .username {
+            color: #e0e0e0;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .user-info .username:hover {
+            color: #bbb;
+        }
+
+        .login-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.9em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+            text-decoration: none;
+        }
+
+        .login-button:hover {
+            background: #0056b3;
+        }
+
+        /* Медиа-запросы для хедера */
+        @media (max-width: 768px) {
+            nav {
+                flex-wrap: wrap;
+                padding: 10px;
+            }
+
+            .logo h1 {
+                font-size: 1.2em;
+            }
+
+            .search-form {
+                width: 100%;
+                margin: 0.5rem 0;
+            }
+
+            nav ul {
+                padding: 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            nav li {
+                margin: 5px;
+            }
+
+            .user-info {
+                gap: 0.3rem;
+            }
+
+            .user-info img {
+                width: 32px;
+                height: 32px;
+            }
+
+            .upload-button, .login-button {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+
+            .user-info .username {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/"><img src="/static/logo.webp" alt="logo" class="logo"></a>
+            <ul>
+                <li><a href="{{ url_for('zapros_na_postavku') }}">Запрос на поставку</a></li>
+                <li>
+                    <form class="search-form" action="/" method="GET">
+                        <input type="text" name="query" placeholder="Поиск по видео..." class="search-input" value="{{ request.args.get('query', '') }}">
+                        <button type="submit" class="search-button">Искать</button>
+                    </form>
+                </li>
+                <li class="user-info">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('upload') }}" class="upload-button">+</a>
+                        <img src="{{ current_user.avatar or url_for('static', filename='default-avatar.webp') }}" alt="Аватар">
+                        <a href="{{ url_for('dashboard') }}" class="username">{{ current_user.username }}</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="login-button">Войти</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <h1>Вход</h1>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Логин" required>
+            <input type="password" name="password" placeholder="Пароль" required>
+            <button type="submit">Войти</button>
+        </form>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>
