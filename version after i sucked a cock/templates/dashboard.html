@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+  <h1>Dashboard</h1>
+  <h2>Your Videos</h2>
+  <div class="video-list">
+    {% for video in videos %}
+      <div class="video-item">
+        <a href="{{ url_for('video_detail', video_id=video.id) }}">
+          <img src="{{ url_for('stream_thumbnail', filename=video.id + '.' + video.thumbnail_extension) }}" alt="{{ video.title }}">
+          <h3>{{ video.title }}</h3>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+  <h2>Your Subscriptions</h2>
+  <div class="subscription-list">
+    {% for sub in subscriptions %}
+      <a href="{{ url_for('channel', username=sub.username) }}">{{ sub.username }}</a>
+    {% endfor %}
+  </div>
+{% endblock %}

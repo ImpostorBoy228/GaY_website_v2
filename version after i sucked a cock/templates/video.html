@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}{{ video.title }}{% endblock %}
+{% block content %}
+  <h1>{{ video.title }}</h1>
+  <video controls>
+    <source src="{{ url_for('stream_video_file', filename=video.id + '.' + video.file_extension) }}" type="video/{{ video.file_extension }}">
+  </video>
+  <p>{{ video.description }}</p>
+  <p>Uploaded by {{ video.uploader }} on {{ video.upload_date.strftime('%Y-%m-%d') }}</p>
+  <p>Views: {{ video.views }}</p>
+  <div>
+    <button id="upvote-btn">Upvote ({{ upvotes }})</button>
+    <button id="downvote-btn">Downvote ({{ downvotes }})</button>
+  </div>
+  <h2>Comments</h2>
+  <div class="comment-list">
+    {% for comment in comments %}
+      <div class="comment">
+        <p>{{ comment.user.username }}: {{ comment.text }}</p>
+      </div>
+    {% endfor %}
+  </div>
+  {% if current_user.is_authenticated %}
+    <form method="POST" action="{{ url_for('add_comment', video_id=video.id) }}">
+      <textarea name="comment_text" required></textarea>
+      <button type="submit">Add Comment</button>
+    </form>
+  {% endif %}
+{% endblock %}
+{% block extra_js %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const upvoteBtn = document.getElementById('upvote-btn');
+      const downvoteBtn = document.getElementById('downvote-btn');
+      if (upvoteBtn) {
+        upvoteBtn.addEventListener('click', () => {
+          fetch('/video/{{ video.id }}/upvote', { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } })
+            .then(response => response.json())
+            .then(data => {
+              upvoteBtn.textContent = `Upvote (${data.upvotes})`;
+              downvoteBtn.textContent = `Downvote (${data.downvotes})`;
+            });
+        });
+      }
+      if (downvoteBtn) {
+        downvoteBtn.addEventListener('click', () => {
+          fetch('/video/{{ video.id }}/downvote', { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } })
+            .then(response => response.json())
+            .then(data => {
+              upvoteBtn.textContent = `Upvote (${data.upvotes})`;
+              downvoteBtn.textContent = `Downvote (${data.downvotes})`;
+            });
+        });
+      }
+    });
+  </script>
+{% endblock %}

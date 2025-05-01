@@ -1,0 +1,270 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Менеджер загрузки видео</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #10b981;
+            transition: width 0.3s ease-in-out;
+        }
+        .thumbnail {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6 text-center">Менеджер загрузки видео</h1>
+
+        <!-- Форма поиска -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Поиск видео</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="searchQuery" placeholder="Запрос, теги или название канала" class="w-full p-2 border rounded">
+                <select id="searchType" class="w-full p-2 border rounded">
+                    <option value="query">Поиск по запросу</option>
+                    <option value="tags">Поиск по тегам</option>
+                    <option value="channel">Поиск по каналу</option>
+                </select>
+                <input type="number" id="minViews" placeholder="Мин. просмотров" class="w-full p-2 border rounded">
+                <input type="number" id="minDuration" placeholder="Мин. длительность (сек)" class="w-full p-2 border rounded">
+                <input type="number" id="maxDuration" placeholder="Макс. длительность (сек)" class="w-full p-2 border rounded">
+                <input type="number" id="maxResults" placeholder="Макс. результатов" value="10" class="w-full p-2 border rounded">
+            </div>
+            <button id="searchBtn" class="mt-4 w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Найти видео</button>
+        </div>
+
+        <!-- Список найденных видео -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4">Найденные видео</h2>
+            <div class="table-container">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="p-2"><input type="checkbox" id="selectAll"></th>
+                            <th class="p-2">Миниатюра</th>
+                            <th class="p-2">Название</th>
+                            <th class="p-2">Канал</th>
+                            <th class="p-2">Просмотры</th>
+                        </tr>
+                    </thead>
+                    <tbody id="videoList"></tbody>
+                </table>
+            </div>
+            <button id="downloadSelected" class="mt-4 w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 disabled:bg-gray-400" disabled>Загрузить выбранные</button>
+        </div>
+
+        <!-- Статус загрузок -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Текущие задачи загрузки</h2>
+            <div class="table-container">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="p-2">ID видео</th>
+                            <th class="p-2">Название</th>
+                            <th class="p-2">Статус</th>
+                            <th class="p-2">Прогресс</th>
+                            <th class="p-2">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="downloadTasks"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiBaseUrl = '/api'; // Предполагается, что у вас есть API на сервере
+        let ws = null;
+
+        // Подключение WebSocket для обновления статуса загрузок
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/ws/download_status`);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                updateDownloadTasks(data.tasks);
+            };
+            ws.onclose = () => setTimeout(connectWebSocket, 1000);
+        }
+        connectWebSocket();
+
+        // Поиск видео
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const query = document.getElementById('searchQuery').value;
+            const searchType = document.getElementById('searchType').value;
+            const minViews = parseInt(document.getElementById('minViews').value) || 0;
+            const minDuration = parseInt(document.getElementById('minDuration').value) || 0;
+            const maxDuration = parseInt(document.getElementById('maxDuration').value) || Infinity;
+            const maxResults = parseInt(document.getElementById('maxResults').value) || 10;
+
+            const response = await fetch(`${apiBaseUrl}/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, searchType, minViews, minDuration, maxDuration, maxResults })
+            });
+            const videos = await response.json();
+            displayVideos(videos);
+        });
+
+        // Отображение списка видео
+        function displayVideos(videos) {
+            const videoList = document.getElementById('videoList');
+            videoList.innerHTML = '';
+            videos.forEach(video => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-2"><input type="checkbox" class="video-checkbox" data-id="${video.id}"></td>
+                    <td class="p-2"><img src="${video.thumbnail}" alt="Thumbnail" class="thumbnail"></td>
+                    <td class="p-2">${video.title}</td>
+                    <td class="p-2">${video.channel}</td>
+                    <td class="p-2">${video.views.toLocaleString()}</td>
+                `;
+                videoList.appendChild(row);
+            });
+            updateDownloadButtonState();
+        }
+
+        // Выбор всех видео
+        document.getElementById('selectAll').addEventListener('change', (e) => {
+            document.querySelectorAll('.video-checkbox').forEach(cb => cb.checked = e.target.checked);
+            updateDownloadButtonState();
+        });
+
+        // Обновление состояния кнопки загрузки
+        function updateDownloadButtonState() {
+            const selected = document.querySelectorAll('.video-checkbox:checked').length > 0;
+            document.getElementById('downloadSelected').disabled = !selected;
+        }
+
+        document.getElementById('videoList').addEventListener('change', updateDownloadButtonState);
+
+        // Загрузка выбранных видео
+        document.getElementById('downloadSelected').addEventListener('click', async () => {
+            const selectedIds = Array.from(document.querySelectorAll('.video-checkbox:checked')).map(cb => cb.dataset.id);
+            await fetch(`${apiBaseUrl}/download`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoIds: selectedIds })
+            });
+        });
+
+        // Обновление списка задач загрузки
+        function updateDownloadTasks(tasks) {
+            const downloadTasks = document.getElementById('downloadTasks');
+            downloadTasks.innerHTML = '';
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                const progress = task.progress || 0;
+                row.innerHTML = `
+                    <td class="p-2">${task.video_id}</td>
+                    <td class="p-2">${task.title || 'Загрузка...'}</td>
+                    <td class="p-2">${task.status}</td>
+                    <td class="p-2">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%"></div>
+                        </div>
+                    </td>
+                    <td class="p-2">
+                        ${task.status === 'downloading' ? `<button class="pause-btn bg-yellow-500 text-white p-1 rounded" data-id="${task.id}">Пауза</button>` : ''}
+                        ${task.status === 'pending' || task.status === 'downloading' ? `<button class="cancel-btn bg-red-500 text-white p-1 rounded" data-id="${task.id}">Отмена</button>` : ''}
+                        ${task.status === 'error' ? `<button class="retry-btn bg-blue-500 text-white p-1 rounded" data-id="${task.id}">Повтор</button>` : ''}
+                    </td>
+                `;
+                downloadTasks.appendChild(row);
+            });
+
+            // Обработчики кнопок управления
+            document.querySelectorAll('.pause-btn').forEach(btn => {
+                btn.addEventListener('click', () => pauseTask(btn.dataset.id));
+            });
+            document.querySelectorAll('.cancel-btn').forEach(btn => {
+                btn.addEventListener('click', () => cancelTask(btn.dataset.id));
+            });
+            document.querySelectorAll('.retry-btn').forEach(btn => {
+                btn.addEventListener('click', () => retryTask(btn.dataset.id));
+            });
+        }
+
+        // Управление задачами
+        async function pauseTask(taskId) {
+            await fetch(`${apiBaseUrl}/task/pause`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId })
+            });
+        }
+
+        async function cancelTask(taskId) {
+            await fetch(`${apiBaseUrl}/task/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId })
+            });
+        }
+
+        async function retryTask(taskId) {
+            await fetch(`${apiBaseUrl}/task/retry`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ taskId })
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+flask
+flask-sqlalchemy
+flask-migrate
+flask-login
+supabase
+yt-dlp
+google-api-python-client
+google-auth-oauthlib
+python-dotenv
+cachetools
+humanize
+sqlalchemy
+psycopg2-binary
+transformers
+torch
