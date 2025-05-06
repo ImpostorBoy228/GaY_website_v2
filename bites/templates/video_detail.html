@@ -1,0 +1,531 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% load custom_filters %}
+
+{% block title %}{{ video.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Video Column -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Video Player -->
+            <div class="bg-black rounded-lg overflow-hidden relative" style="padding-bottom:56.25%;">
+                <video class="absolute top-0 left-0 w-full h-full object-contain" controls>
+                    <source src="{{ video.get_video_url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <!-- Video Info -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h1 id="videoTitle" class="text-2xl font-bold mb-4">{{ video.title }}</h1>
+                
+                <!-- Video Stats -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-600">{{ video.views|intcomma }} просмотров</span>
+                        <span class="text-gray-600">{{ video.created_at|timesince }} назад</span>
+                        {% if video.rating > 0 or video.absolute_rating > 0 %}
+                        <div class="flex space-x-2">
+                            <span class="flex items-center bg-gray-100 px-3 py-1 rounded-full">
+                                <svg class="w-4 h-4 text-yellow-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                                <span title="Относительный рейтинг">{{ video.rating|floatformat:2 }}</span>
+                            </span>
+                            <span class="flex items-center bg-blue-100 px-3 py-1 rounded-full">
+                                <svg class="w-4 h-4 text-blue-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
+                                </svg>
+                                <span title="Абсолютный рейтинг">{{ video.absolute_rating|floatformat:2 }}</span>
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Like/Dislike Buttons -->
+                        {% if user.is_authenticated %}
+                        <div class="flex space-x-2">
+                            <button id="likeButton" class="btn-like {% if user_vote.action == 'like' %}active{% endif %}" data-action="like">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                                </svg>
+                                <span id="likesCount" class="vote-count">{{ upvotes }}</span>
+                            </button>
+                            <button id="dislikeButton" class="btn-dislike {% if user_vote.action == 'dislike' %}active{% endif %}" data-action="dislike">
+                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.105-1.79l-.05-.025A4 4 0 0011.055 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+                                </svg>
+                                <span id="dislikesCount" class="vote-count">{{ downvotes }}</span>
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Share Button -->
+                        <button onclick="shareVideo()" class="flex items-center space-x-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
+                            </svg>
+                            <span>Поделиться</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Channel Info -->
+                <div class="flex items-center justify-between border-t border-b py-4 my-4">
+                    <div class="flex items-center space-x-4">
+                        <a href="{% url 'channel' video.uploader.id %}" class="flex items-center space-x-4">
+                            <img src="{{ video.uploader.get_avatar_url }}" 
+                                 alt="{{ video.uploader.username }}" 
+                                 class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <h3 class="font-semibold">{{ video.uploader.username }}</h3>
+                                <p class="text-sm text-gray-600">{{ video.uploader.videos.count }} видео</p>
+                            </div>
+                        </a>
+                    </div>
+                    {% if user.is_authenticated and user != video.uploader %}
+                        <button onclick="toggleSubscription({{ video.uploader.id }})" 
+                                class="px-4 py-2 rounded-full {% if is_subscribed %}bg-gray-200 hover:bg-gray-300{% else %}bg-[#DA5552] text-white hover:bg-[#DF7373]{% endif %}">
+                            {% if is_subscribed %}Отписаться{% else %}Подписаться{% endif %}
+                        </button>
+                    {% endif %}
+                </div>
+
+                <!-- Video Description -->
+                <div class="mt-4">
+                    <p id="videoDescription" class="text-gray-800 whitespace-pre-line">{{ video.description }}</p>
+                </div>
+
+                <!-- Tag Generation -->
+                <div class="mt-4">
+                    <button id="generateTagsButton" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none">Сгенерировать теги</button>
+                    <div id="generatedTagsContainer" class="flex flex-wrap gap-2 mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-2xl font-bold mb-4">Комментарии</h2>
+                
+                {% if user.is_authenticated %}
+                <form id="commentForm" class="mb-6">
+                    {% csrf_token %}
+                    <div class="flex gap-4">
+                        <img src="{{ user.get_avatar_url }}" alt="{{ user.username }}" class="w-10 h-10 rounded-full">
+                        <div class="flex-1">
+                            <textarea name="text" rows="2" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Добавить комментарий..."></textarea>
+                            <div class="flex justify-end mt-2">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    Отправить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
+
+                <div id="commentsList" class="space-y-4">
+                    {% for comment in video.comments.all %}
+                    <div class="flex gap-4">
+                        <img src="{{ comment.user.get_avatar_url }}" alt="{{ comment.user.username }}" class="w-10 h-10 rounded-full">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <a href="{% url 'channel' comment.user.id %}" class="font-semibold hover:underline">{{ comment.user.username }}</a>
+                                <span class="text-gray-500 text-sm">{{ comment.created_at|timesince }} назад</span>
+                                {% if comment.sentiment < 0.3 %}
+                                    <span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Негативный</span>
+                                {% elif comment.sentiment > 0.7 %}
+                                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Позитивный</span>
+                                {% else %}
+                                    <span class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Нейтральный</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-800">{{ comment.text }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-4">Пока нет комментариев. Будьте первым!</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Videos Column -->
+        <div class="space-y-4">
+            <h2 class="text-xl font-bold mb-4">Рекомендуемые видео</h2>
+            {% for recommended_video in recommended_videos %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <a href="{{ recommended_video.get_absolute_url }}" class="block">
+                    <div class="relative" style="padding-bottom:56.25%;">
+                        <img src="{{ recommended_video.get_thumbnail_url }}" 
+                             alt="{{ recommended_video.title }}" 
+                             class="absolute inset-0 w-full h-full object-cover">
+                        <div class="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-sm px-2 py-1 rounded">
+                            {{ recommended_video.duration|duration }}
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <h3 class="font-semibold text-sm line-clamp-2">{{ recommended_video.title }}</h3>
+                    </div>
+                </a>
+                <div class="px-3 pb-3 -mt-2">
+                    <div class="flex items-center space-x-2 text-gray-600 text-xs mt-1">
+                        <a href="{% url 'channel' recommended_video.uploader.id %}" class="hover:text-[#DA5552]">
+                            {{ recommended_video.uploader.username }}
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-2 text-gray-600 text-xs mt-1">
+                        <span>{{ recommended_video.views|intcomma }} просмотров</span>
+                        <span>•</span>
+                        <span>{{ recommended_video.created_at|timesince }} назад</span>
+                    </div>
+                    {% if recommended_video.rating > 0 or recommended_video.absolute_rating > 0 %}
+                    <div class="flex space-x-2 mt-1">
+                        <span class="flex items-center bg-gray-100 px-2 py-0.5 rounded text-xs">
+                            <svg class="w-3 h-3 text-yellow-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <span>{{ recommended_video.rating|floatformat:2 }}</span>
+                        </span>
+                        <span class="flex items-center bg-blue-100 px-2 py-0.5 rounded text-xs">
+                            <svg class="w-3 h-3 text-blue-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>{{ recommended_video.absolute_rating|floatformat:2 }}</span>
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">Пока нет рекомендованных видео</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Store important variables in data attributes -->
+<div id="videoData" 
+     data-video-id="{{ video.id }}" 
+     data-csrf-token="{{ csrf_token }}" 
+     data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}" 
+     class="hidden">
+</div>
+
+<!-- Core functionality scripts -->
+<script>
+// Simple utility functions
+function getVideoData() {
+    const dataElement = document.getElementById('videoData');
+    return {
+        videoId: dataElement.dataset.videoId,
+        csrfToken: dataElement.dataset.csrfToken,
+        isAuthenticated: dataElement.dataset.authenticated === 'true'
+    };
+}
+</script>
+
+<!-- Share functionality -->
+<script>
+function shareVideo() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ video.title }}',
+            text: 'Посмотрите это видео',
+            url: window.location.href
+        })
+        .catch(error => console.log('Error sharing:', error));
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        alert('Ссылка скопирована в буфер обмена!');
+    }
+}
+</script>
+
+<!-- Subscription functionality -->
+<script>
+function toggleSubscription(channelId) {
+    const { csrfToken } = getVideoData();
+    
+    fetch(`/channel/${channelId}/subscribe/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла ошибка при обработке подписки');
+    });
+}
+</script>
+
+<!-- Voting functionality -->
+<script>
+function voteVideo(action) {
+    const { videoId, csrfToken, isAuthenticated } = getVideoData();
+    
+    if (!isAuthenticated) {
+        // Redirect to login if not logged in
+        window.location.href = '/login/?next=' + window.location.pathname;
+        return;
+    }
+
+    // Оптимистичное обновление UI до получения ответа от сервера
+    const likeButton = document.querySelector('.btn-like');
+    const dislikeButton = document.querySelector('.btn-dislike');
+    const likesCount = document.getElementById('likesCount');
+    const dislikesCount = document.getElementById('dislikesCount');
+    
+    // Текущие значения счетчиков
+    let currentLikes = parseInt(likesCount.textContent) || 0;
+    let currentDislikes = parseInt(dislikesCount.textContent) || 0;
+    
+    // Проверяем, нажата ли уже кнопка
+    const isLikeActive = likeButton.classList.contains('active');
+    const isDislikeActive = dislikeButton.classList.contains('active');
+    
+    // Обновляем UI оптимистично
+    if (action === 'like') {
+        if (isLikeActive) {
+            // Отменяем лайк
+            likeButton.classList.remove('active');
+            likesCount.textContent = currentLikes - 1;
+        } else {
+            // Ставим лайк
+            likeButton.classList.add('active');
+            likesCount.textContent = currentLikes + 1;
+            
+            // Если был дизлайк, убираем его
+            if (isDislikeActive) {
+                dislikeButton.classList.remove('active');
+                dislikesCount.textContent = currentDislikes - 1;
+            }
+        }
+    } else if (action === 'dislike') {
+        if (isDislikeActive) {
+            // Отменяем дизлайк
+            dislikeButton.classList.remove('active');
+            dislikesCount.textContent = currentDislikes - 1;
+        } else {
+            // Ставим дизлайк
+            dislikeButton.classList.add('active');
+            dislikesCount.textContent = currentDislikes + 1;
+            
+            // Если был лайк, убираем его
+            if (isLikeActive) {
+                likeButton.classList.remove('active');
+                likesCount.textContent = currentLikes - 1;
+            }
+        }
+    }
+
+    // Отправляем запрос на сервер асинхронно, без блокировки UI
+    const formData = new FormData();
+    formData.append('action', action);
+    
+    fetch(`/video/${videoId}/vote/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Синхронизируем с сервером только если есть несоответствия
+            if (parseInt(likesCount.textContent) !== data.upvotes) {
+                likesCount.textContent = data.upvotes;
+            }
+            if (parseInt(dislikesCount.textContent) !== data.downvotes) {
+                dislikesCount.textContent = data.downvotes;
+            }
+            
+            // Обновляем классы только если есть несоответствия
+            const shouldHaveLikeActive = data.user_vote && data.user_vote.action === 'like';
+            const shouldHaveDislikeActive = data.user_vote && data.user_vote.action === 'dislike';
+            
+            if (shouldHaveLikeActive !== likeButton.classList.contains('active')) {
+                likeButton.classList.toggle('active');
+            }
+            
+            if (shouldHaveDislikeActive !== dislikeButton.classList.contains('active')) {
+                dislikeButton.classList.toggle('active');
+            }
+        } else {
+            // При ошибке восстанавливаем состояние
+            alert(data.error || 'Произошла ошибка при голосовании');
+            location.reload(); // Перезагружаем страницу для восстановления корректного состояния
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // При ошибке восстанавливаем состояние
+        location.reload(); // Перезагружаем страницу для восстановления корректного состояния
+    });
+}
+</script>
+
+<!-- Comment functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners for like/dislike buttons
+    const likeButton = document.getElementById('likeButton');
+    const dislikeButton = document.getElementById('dislikeButton');
+    
+    if (likeButton) {
+        likeButton.addEventListener('click', function() {
+            voteVideo('like');
+        });
+    }
+    
+    if (dislikeButton) {
+        dislikeButton.addEventListener('click', function() {
+            voteVideo('dislike');
+        });
+    }
+
+    // Comment functionality
+    const commentForm = document.getElementById('commentForm');
+    const commentsList = document.getElementById('commentsList');
+    const { videoId } = getVideoData();
+
+    if (commentForm) {
+        commentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch(`/video/${videoId}/comment/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Create new comment element
+                    const commentHtml = `
+                        <div class="flex gap-4">
+                            <img src="${data.avatar_url}" alt="${data.username}" class="w-10 h-10 rounded-full">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <a href="/channel/${data.username}/" class="font-semibold hover:underline">${data.username}</a>
+                                    <span class="text-gray-500 text-sm">только что</span>
+                                    ${data.sentiment < 0.3 ? 
+                                        '<span class="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Негативный</span>' :
+                                        data.sentiment > 0.7 ?
+                                        '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Позитивный</span>' :
+                                        '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">Нейтральный</span>'
+                                    }
+                                </div>
+                                <p class="text-gray-800">${data.text}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove "no comments" message if it exists
+                    const noComments = commentsList.querySelector('.text-center');
+                    if (noComments) {
+                        noComments.remove();
+                    }
+                    
+                    // Add new comment at the top
+                    commentsList.insertAdjacentHTML('afterbegin', commentHtml);
+                    
+                    // Clear form
+                    this.reset();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    }
+});
+</script>
+
+<script src="{% static 'js/video.js' %}"></script>
+
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const button = document.getElementById('generateTagsButton');
+        const container = document.getElementById('generatedTagsContainer');
+        const titleEl = document.getElementById('videoTitle');
+        const descEl = document.getElementById('videoDescription');
+        const csrftoken = getCookie('csrftoken');
+
+        button.addEventListener('click', async () => {
+            const title = titleEl.textContent.trim();
+            const description = descEl.textContent.trim();
+            button.disabled = true;
+            const originalText = button.textContent;
+            button.textContent = 'Генерирую...';
+            try {
+                const response = await fetch("{% url 'generate_tags' %}", {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({ title, description }),
+                });
+                const data = await response.json();
+                container.innerHTML = '';
+                if (data.tags && Array.isArray(data.tags)) {
+                    data.tags.forEach(tag => {
+                        const span = document.createElement('span');
+                        span.className = 'bg-gray-200 px-3 py-1 rounded-full text-sm';
+                        span.textContent = tag;
+                        container.appendChild(span);
+                    });
+                } else {
+                    alert(data.error || 'Не удалось сгенерировать теги');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка при запросе тегов');
+            }
+            button.disabled = false;
+            button.textContent = originalText;
+        });
+    });
+</script>
+{% endblock %} 
