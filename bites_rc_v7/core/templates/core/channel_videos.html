@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+{% load view_count %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Channel Videos</h2>
+    
+    <div class="row">
+        {% for video in videos %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <a href="{% url 'core:video_detail' pk=video.id %}">
+                    {% if video.thumbnail %}
+                    <img src="{{ video.thumbnail.url }}" class="card-img-top" alt="{{ video.title }}">
+                    {% else %}
+                    <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-video fa-3x"></i>
+                    </div>
+                    {% endif %}
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title">{{ video.title }}</h5>
+                    <p class="card-text text-muted">
+                        {{ video.views|format_view_count }} views • {{ video.upload_date|timesince }} ago
+                    </p>
+                    <div class="btn-group">
+                        <a href="{% url 'core:edit_video' pk=video.id %}" class="btn btn-sm btn-primary">Edit</a>
+                        <a href="{% url 'core:delete_video' pk=video.id %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this video?')">Delete</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No videos found. <a href="{% url 'core:upload_video' %}">Upload a video</a>.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

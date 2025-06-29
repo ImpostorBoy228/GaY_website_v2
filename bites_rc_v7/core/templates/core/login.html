@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <div class="upload-container">
+        <h2 class="section-title">Вход</h2>
+    {% if error %}
+            <div class="message error">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+            <div class="form-group">
+                <label for="email" class="form-label">Email или имя пользователя:</label>
+                <input type="text" id="email" name="email" class="form-control" required>
+        </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Пароль:</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+            <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+        <p style="margin-top: 20px; color: var(--secondary-text);">
+            Нет аккаунта? <a href="{% url 'core:register' %}" style="color: var(--primary-color);">Зарегистрироваться</a>.
+        </p>
+    </div>
+{% endblock %} 

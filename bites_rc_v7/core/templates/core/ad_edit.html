@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="header-actions">
+    <h2>Редактировать рекламу: {{ ad.title }}</h2>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="import-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="button">Сохранить</button>
+    <a href="{% url 'core:ad_manager' %}" class="button secondary">Отмена</a>
+</form>
+{% endblock %} 

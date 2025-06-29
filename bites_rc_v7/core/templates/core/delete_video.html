@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="alert alert-danger">
+        <h4 class="alert-heading">Подтверждение удаления</h4>
+        <p>Вы уверены, что хотите удалить видео "{{ video.title }}"?</p>
+        <p>Это действие нельзя будет отменить.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Удалить
+            </button>
+            {% if video.channel %}
+                <a href="{% url 'core:channel_videos' channel_id=video.channel.id %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Отмена
+                </a>
+            {% else %}
+                <a href="{% url 'core:home' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Отмена
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+{% endblock %} 

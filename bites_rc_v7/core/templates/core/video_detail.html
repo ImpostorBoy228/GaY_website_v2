@@ -1,0 +1,391 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load view_count %}
+{% load static %}
+
+{% block title %}{{ video.title }}{% endblock %}
+
+{% block head %}
+    <!-- Пустой блок head -->
+{% endblock %}
+
+{% block content %}
+    <!-- Основной контент страницы -->
+    <!-- Add Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'core/css/video_detail.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/video_detail_spacing_fix.css' %}">
+    
+    <!-- Подключение модульных JS файлов -->
+    <script src="{% static 'core/js/utils.js' %}"></script>
+    <script src="{% static 'core/js/video-interactions.js' %}"></script>
+    <script src="{% static 'core/js/analytics-tracking.js' %}"></script>
+    <script src="{% static 'core/js/seek-tracker.js' %}"></script>
+    <script src="{% static 'core/js/video-player.js' %}"></script>
+    <script src="{% static 'core/js/youtube-download-status.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('click', function(event) {
+        const link = event.target.closest('.recommended-video-link');
+        if (link) {
+            const fromId = link.dataset.fromVideoId;
+            const toId = link.dataset.toVideoId;
+            const url = "{% url 'core:register_video_transition' %}";
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const formData = new FormData();
+            formData.append('from_id', fromId);
+            formData.append('to_id', toId);
+            formData.append('csrfmiddlewaretoken', csrftoken);
+
+            const blob = new Blob([new URLSearchParams(formData).toString()], {type: 'application/x-www-form-urlencoded'});
+            navigator.sendBeacon(url, blob);
+        }
+    });
+});
+</script>
+    
+    <!-- Основной контейнер для видео и информации -->
+    <div id="videoPageContainer" class="video-page-container" data-is-youtube="{{ video.is_youtube|lower }}">
+        <div class="main-content">
+            <!-- Заголовок видео -->
+            <h1 class="video-title">{{ video.title }}</h1>
+            
+            <!-- Видео плеер -->
+            <div class="video-player-wrapper">
+                <!-- Переключатель театрального режима -->
+                <div class="theater-mode-toggle">
+                    <button id="theaterModeBtn" class="theater-mode-button theater-mode-btn">
+                        <i class="fas fa-expand"></i> <span>Театральный режим</span>
+                    </button>
+                </div>
+                {% if video.is_youtube and not video.is_downloaded %}
+                    <!-- YouTube player или статус загрузки -->
+                    <div id="download-status" class="download-status">
+                        <div class="status-message">Видео загружается в фоновом режиме...</div>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted">Вы можете закрыть эту страницу. Загрузка продолжится в фоновом режиме.</small>
+                    </div>
+                    <div id="youtube-player"></div>
+                {% else %}
+                    <!-- Стандартный видео плеер -->
+                    <div id="loadingOverlay" class="loading-overlay">
+                        <div class="loading-spinner"></div>
+                        <div id="loadingText" class="loading-text">Загрузка видео...</div>
+                    </div>
+                    
+                    <video id="videoPlayer" class="video-player" controls autoplay poster="{% if video.thumbnail %}{{ video.thumbnail.url }}{% endif %}" crossorigin="anonymous" preload="auto" controlsList="nodownload">
+                        <source src="{% url 'core:stream_video' pk=video.pk %}" type="video/mp4">
+                        Ваш браузер не поддерживает тег видео.
+                    </video>
+                    <!-- Видео рекламы (скрыто по умолчанию) -->
+                    <video id="adPlayer" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0; background:#000; z-index:10;" playsinline></video>
+                    <div id="adOverlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9; align-items:center; justify-content:center; color:yellow; font-size:2em; font-weight:bold; text-align:center;">
+                        Реклама
+                    </div>
+                {% endif %}
+                
+                <!-- Сообщение об ошибке -->
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    <div>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p id="errorText">Ошибка загрузки видео</p>
+                        <div class="error-actions">
+                            <button onclick="retryPlayback()">Повторить</button>
+                            <button onclick="reportError()">Сообщить об ошибке</button>
+                            {% if video.is_youtube and video.youtube_id %}
+                                <button onclick="window.open('https://www.youtube.com/watch?v={{ video.youtube_id }}', '_blank')">
+                                    Смотреть на YouTube
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Основная информация о видео (под плеером) -->
+            <div class="video-primary-info">
+                <div class="video-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-eye"></i>
+                        {% if video.is_youtube %}
+                            {{ video.youtube_views|format_view_count }}
+                        {% else %}
+                            {{ video.views|format_view_count }}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="video-actions">
+                    <div class="like-dislike">
+                        <form id="likeForm" method="post" action="/video/{{ video.id }}/like/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" id="likeBtn" class="action-btn like{% if user_liked %} active{% endif %}" {% if not user.is_authenticated %}disabled{% endif %}>
+                                <i class="fas fa-thumbs-up"></i>
+                                <span class="like-count">{{ video.likes_count }}</span>
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="ratings">
+                        <div class="rating">
+                            <span class="rating-label"><i class="fas fa-star text-success"></i> Рейтинг:</span>
+                            <span class="rating-value">{{ video.absolute_rating|floatformat:1 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Правая колонка (рекомендуемые видео) -->
+        <div class="sidebar-content">
+            <div class="recommended-videos">
+                <h3>Рекомендуемые видео</h3>
+                <div class="recommended-videos-list">
+                    {% for rec_video in recommended_videos %}
+                    <div class="recommended-video-card">
+                        <a href="{% url 'core:video_detail' pk=rec_video.pk %}" class="recommended-video-link" data-from-video-id="{{ video.pk }}" data-to-video-id="{{ rec_video.pk }}">
+                            <div class="recommended-video-thumbnail">
+                                {% if rec_video.thumbnail %}
+                                <img src="{{ rec_video.thumbnail.url }}" alt="{{ rec_video.title }}">
+                                {% else %}
+                                <div class="placeholder-thumbnail">Нет превью</div>
+                                {% endif %}
+                            </div>
+                            <div class="recommended-video-info">
+                                <h4 class="recommended-video-title">{{ rec_video.title }}</h4>
+                                <div class="recommended-video-meta">
+                                    <span class="recommended-video-channel">
+                                    {% if rec_video.channel %}
+                                        {{ rec_video.channel.name }}
+                                    {% elif rec_video.uploaded_by %}
+                                        {{ rec_video.uploaded_by.username }}
+                                    {% else %}
+                                        Неизвестный канал
+                                    {% endif %}
+                                    </span>
+                                    <span class="recommended-video-time">{{ rec_video.time_elapsed }}</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя секция (информация о канале, описание, теги) -->
+    <div class="video-details-section">
+        <div class="channel-info-section">
+            <div class="channel-row">
+                <div class="channel-info">
+                    {% if video.channel %}
+                        <a href="{% url 'core:channel_detail' channel_id=video.channel.id %}" class="channel-link">
+                            {% if video.channel.is_youtube_channel %}
+                                {% if video.channel.avatar %}
+                                    <img src="{{ video.channel.avatar.url }}" alt="{{ video.channel.name }}" class="channel-avatar">
+                                {% elif video.channel.youtube_avatar_url %}
+                                    <img src="{{ video.channel.youtube_avatar_url }}" alt="{{ video.channel.name }}" class="channel-avatar">
+                                {% else %}
+                                    <div class="default-avatar">{{ video.channel.name|first }}</div>
+                                {% endif %}
+                            {% else %}
+                                {% if video.channel.avatar %}
+                                    <img src="{{ video.channel.avatar.url }}" alt="{{ video.channel.name }}" class="channel-avatar">
+                                {% else %}
+                                    <div class="default-avatar">{{ video.channel.name|first }}</div>
+                                {% endif %}
+                            {% endif %}
+                            <span class="channel-name">{{ video.channel.name }}</span>
+                        </a>
+                        {% if video.channel.youtube_subscribers > 0 %}
+                            <span class="subscriber-count">{{ video.channel.youtube_subscribers|intcomma }} подписчиков</span>
+                        {% else %}
+                            <span class="subscriber-count">{{ video.channel.subscribers.count|intcomma }} подписчиков</span>
+                        {% endif %}
+                    {% else %}
+                        <a href="{% url 'core:profile' username=video.uploaded_by.username %}" class="channel-link">
+                            {% if video.uploaded_by.profile.avatar %}
+                                <img src="{{ video.uploaded_by.profile.avatar.url }}" alt="{{ video.uploaded_by.username }}" class="channel-avatar">
+                            {% else %}
+                                <div class="default-avatar">{{ video.uploaded_by.username|first }}</div>
+                            {% endif %}
+                            <span class="channel-name">{{ video.uploaded_by.username }}</span>
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="subscribe-action">
+                    {% if video.channel and not is_owner %}
+                        {% if is_subscribed %}
+                            <form id="unsubscribeForm" method="post" action="{% url 'core:unsubscribe' channel_id=video.channel.id %}" class="subscribe-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary subscribe-btn">
+                                    <i class="fas fa-bell-slash"></i> Отписаться
+                                </button>
+                            </form>
+                        {% else %}
+                            <form id="subscribeForm" method="post" action="{% url 'core:subscribe' channel_id=video.channel.id %}" class="subscribe-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary subscribe-btn">
+                                    <i class="fas fa-bell"></i> Подписаться
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="video-description">
+                {{ video.description|linebreaks }}
+            </div>
+            
+            <!-- Теги видео с улучшенным стилем -->
+            <div class="video-tags">
+                {% if video.tags.all %}
+                    <div class="tags-container">
+                        <span class="tags-label">Теги:</span>
+                        <div class="tags-list">
+                            {% for tag in video.tags.all %}
+                                <a href="#" class="tag-pill">{{ tag.name }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Кнопка генерации тегов -->
+                <div class="generate-tags-container">
+                    <form method="post" action="{% url 'core:generate_tags' video_id=video.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn generate-tags-btn">
+                            <i class="fas fa-magic"></i> Сгенерировать теги
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Раздел "Похожие видео" удален по запросу пользователя -->
+
+    <div class="comments-section">
+        <h2>Комментарии</h2>
+        
+        {% if user.is_authenticated %}
+            <form id="commentForm" class="comment-form" method="post" action="{% url 'core:add_comment' pk=video.pk %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea name="content" id="id_content" rows="4" required placeholder="Добавьте комментарий..."></textarea>
+                </div>
+                <!-- Скрытый элемент для сентимента, который будет заполнен автоматически -->
+                <input type="hidden" name="sentiment" value="0.5">
+                <button type="submit" class="button">
+                    <i class="fas fa-paper-plane"></i> Отправить
+                </button>
+                <p class="sentiment-note">Тональность комментария будет определена автоматически</p>
+            </form>
+        {% else %}
+            <div class="login-prompt">
+                <p>
+                    <a href="{% url 'core:login' %}">Войдите</a>, чтобы оставить комментарий
+                </p>
+            </div>
+        {% endif %}
+        
+        {% if comments %}
+            <div class="comments-list">
+                {% for comment in comments %}
+                    <div class="comment">
+                        <div class="comment-avatar">
+                            {% if comment.user.profile.avatar %}
+                                <img src="{{ comment.user.profile.avatar.url }}" alt="{{ comment.user.username }}">
+                            {% else %}
+                                {{ comment.user.username|first|upper }}
+                            {% endif %}
+                        </div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <a href="{% url 'core:profile' username=comment.user.username %}" class="comment-author">
+                                    {{ comment.user.username }}
+                                </a>
+                                <span class="comment-time">{{ comment.time_elapsed }}</span>
+                                <div class="sentiment-badge 
+                                    {% if comment.sentiment < 0.33 %}negative
+                                    {% elif comment.sentiment > 0.66 %}positive
+                                    {% else %}neutral{% endif %}">
+                                    {% if comment.sentiment < 0.33 %}
+                                        <i class="fas fa-angry"></i>
+                                    {% elif comment.sentiment > 0.66 %}
+                                        <i class="fas fa-smile"></i>
+                                    {% else %}
+                                        <i class="fas fa-meh"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="comment-text">
+                                {{ comment.content|linebreaks }}
+                            </div>
+                            {% if user.is_authenticated and comment.user == user or video.uploaded_by == user %}
+                                <div class="comment-actions">
+                                    <a href="{% url 'core:delete_comment' comment_id=comment.id %}" class="delete-comment">
+                                        <i class="fas fa-trash"></i> Удалить
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            {% if comments.has_other_pages %}
+            <nav class="pagination-nav">
+                <ul class="pagination">
+                    {% if comments.has_previous %}
+                        <li><a href="javascript:void(0)" onclick="changeCommentsPage('{{ comments.previous_page_number }}')">&laquo;</a></li>
+                    {% else %}
+                        <li class="disabled"><span>&laquo;</span></li>
+                    {% endif %}
+                    
+                    {% for num in comments_paginator.page_range %}
+                        {% if comments.number == num %}
+                            <li class="active"><span>{{ num }}</span></li>
+                        {% elif num > comments.number|add:'-5' and num < comments.number|add:'5' %}
+                            <li><a href="javascript:void(0)" onclick="changeCommentsPage('{{ num }}')">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if comments.has_next %}
+                        <li><a href="javascript:void(0)" onclick="changeCommentsPage('{{ comments.next_page_number }}')">&raquo;</a></li>
+                    {% else %}
+                        <li class="disabled"><span>&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <script>
+                function changeCommentsPage(page) {
+                    // Получаем текущий URL
+                    let url = new URL(window.location.href);
+                    // Обновляем или добавляем параметр comments_page
+                    url.searchParams.set('comments_page', page);
+                    // Переходим на новый URL
+                    window.location.href = url.toString();
+                }
+            </script>
+            {% endif %}
+        {% else %}
+            <div class="no-comments">
+                <p>Комментариев пока нет. Будьте первым!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Add error toast -->
+    <div id="errorToast" class="error-toast">
+        <span id="errorToastMessage"></span>
+    </div>
+
+{% endblock %}

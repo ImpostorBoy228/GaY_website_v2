@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="upload-container">
+    <h2 class="section-title">Редактировать видео</h2>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="message error">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+        
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}:</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="message error">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+                {% if field.help_text %}
+                    <small class="help-text">{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <div class="button-group">
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            <a href="{% url 'core:video_detail' pk=video.pk %}" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+    
+    {% if video.thumbnail %}
+        <div class="current-thumbnail">
+            <h3>Текущее превью:</h3>
+            <img src="{{ video.thumbnail.url }}" alt="Current thumbnail" style="max-width: 300px;">
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

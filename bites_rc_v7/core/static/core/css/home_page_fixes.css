@@ -1,0 +1,90 @@
+/* Home page grid improvements */
+
+/* Video grid layout */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+/* Video card styling */
+.video-card {
+    background-color: var(--card-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.video-thumbnail {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+}
+
+.video-info {
+    padding: 12px;
+}
+
+.video-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 42px;
+}
+
+/* Fix for video meta - remove dot */
+.video-meta {
+    display: flex;
+    color: var(--secondary-text);
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+/* This replaces the dot separator with space between items */
+.video-meta span {
+    margin-right: 12px;
+}
+
+/* Channel info in cards */
+.channel-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.channel-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Rating badge styling */
+.video-rating {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.rating-badge {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+}

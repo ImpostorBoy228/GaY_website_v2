@@ -1,0 +1,518 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load view_count %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {% if profile.avatar %}
+                <img src="{{ profile.avatar.url }}" alt="{{ profile_user.username }}">
+            {% else %}
+                <div class="default-avatar">{{ profile_user.username|first|upper }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="profile-info">
+            <h1 class="profile-username">{{ profile_user.username }}</h1>
+            
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-value">{{ stats.video_count }}</span>
+                    <span class="stat-label">видео</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ stats.total_views|format_view_count }}</span>
+                    <span class="stat-label">просмотров</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value">{{ stats.total_likes|intcomma }}</span>
+                    <span class="stat-label">лайков</span>
+                </div>
+            </div>
+            
+            <div class="karma-section">
+                <div class="karma-header">
+                    <h3>Карма пользователя</h3>
+                    <span class="karma-value {% if profile.karma >= 70 %}positive{% elif profile.karma <= 30 %}negative{% else %}neutral{% endif %}">
+                        {{ profile.karma|floatformat:1 }}
+                    </span>
+                </div>
+                
+                <div class="karma-bar-container">
+                    <div class="karma-bar">
+                        <div class="karma-progress" style="width: {{ profile.karma }}%;"></div>
+                    </div>
+                    <div class="karma-labels">
+                        <span class="karma-min">0</span>
+                        <span class="karma-max">100</span>
+                    </div>
+                </div>
+                
+                <div class="karma-info">
+                    {% if profile.karma >= 90 %}
+                        <p>Превосходная карма! Вы заслужили уважение сообщества.</p>
+                    {% elif profile.karma >= 70 %}
+                        <p>Хорошая карма! Ваш контент высоко ценится.</p>
+                    {% elif profile.karma >= 40 %}
+                        <p>Нейтральная карма. Продолжайте в том же духе.</p>
+                    {% elif profile.karma >= 20 %}
+                        <p>Карма ниже среднего. Есть куда расти.</p>
+                    {% else %}
+                        <p>Низкая карма. Возможно, стоит пересмотреть подход к контенту.</p>
+                    {% endif %}
+                </div>
+                
+                {% if request.user == profile_user %}
+                <div class="karma-actions">
+                    <a href="{% url 'core:recalculate_karma' %}" class="btn btn-sm">
+                        <i class="fas fa-sync-alt"></i> Пересчитать карму
+                    </a>
+                    <a href="{% url 'core:user_karma' %}" class="btn btn-sm">
+                        <i class="fas fa-chart-bar"></i> Полная статистика
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if profile.bio %}
+                <div class="profile-bio">
+                    <h3>О себе</h3>
+                    <p>{{ profile.bio }}</p>
+                </div>
+            {% endif %}
+            
+            {% if has_channel %}
+                <div class="profile-channel">
+                    <a href="{% url 'core:channel_detail' channel_id=channel.id %}" class="channel-link">
+                        <i class="fas fa-tv"></i> Перейти на канал: {{ channel.name }}
+                    </a>
+                </div>
+            {% endif %}
+            
+            {% if request.user == profile_user %}
+                <div class="profile-actions">
+                    <a href="{% url 'core:edit_profile' %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Редактировать профиль
+                    </a>
+                    {% if not has_channel %}
+                        <a href="{% url 'core:create_channel' %}" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Создать канал
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="profile-videos">
+        <h2>Видео пользователя</h2>
+        
+        {% if videos %}
+            <div class="videos-grid">
+                {% for video in videos %}
+                    <div class="video-card">
+                        <a href="{% url 'core:video_detail' pk=video.pk %}" class="video-link">
+                            <div class="video-thumbnail">
+                                {% if video.thumbnail %}
+                                    <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                                {% elif video.youtube_thumbnail_url %}
+                                    <img src="{{ video.youtube_thumbnail_url }}" alt="{{ video.title }}">
+                                {% else %}
+                                    <div class="default-thumbnail">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="video-duration">{{ video.duration|default:'0:00' }}</span>
+                            </div>
+                            <div class="video-info">
+                                <h3 class="video-title">{{ video.title }}</h3>
+                                <div class="video-meta">
+                                    <span>{{ video.views|add:video.youtube_views|format_view_count }} просмотров</span>
+                                    <span>{{ video.upload_date|timesince }} назад</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-videos">
+                <p>У пользователя пока нет загруженных видео.</p>
+                {% if request.user == profile_user %}
+                    <a href="{% url 'core:upload_video' %}" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Загрузить первое видео
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.profile-header {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 40px;
+    background-color: var(--card-color);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar {
+    flex-shrink: 0;
+}
+
+.profile-avatar img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--primary-color);
+}
+
+.default-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    font-weight: bold;
+    color: white;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-username {
+    font-size: 28px;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 25px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--secondary-text);
+}
+
+.karma-section {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.karma-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.karma-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.karma-value {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.karma-value.positive {
+    color: #28a745;
+}
+
+.karma-value.negative {
+    color: #dc3545;
+}
+
+.karma-value.neutral {
+    color: #ffc107;
+}
+
+.karma-bar-container {
+    margin-bottom: 15px;
+}
+
+.karma-bar {
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.karma-progress {
+    height: 100%;
+    background: linear-gradient(to right, #dc3545, #ffc107, #28a745);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+.karma-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--secondary-text);
+}
+
+.karma-info {
+    margin-bottom: 15px;
+}
+
+.karma-info p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--secondary-text);
+}
+
+.karma-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.profile-bio {
+    margin-bottom: 25px;
+}
+
+.profile-bio h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.profile-bio p {
+    margin: 0;
+    color: var(--secondary-text);
+    white-space: pre-line;
+}
+
+.profile-channel {
+    margin-bottom: 25px;
+}
+
+.channel-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.channel-link:hover {
+    text-decoration: underline;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #e03030;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.profile-videos {
+    margin-top: 40px;
+}
+
+.profile-videos h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    position: relative;
+    display: inline-block;
+}
+
+.profile-videos h2:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+}
+
+.videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.video-card {
+    background-color: var(--card-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.video-link {
+    text-decoration: none;
+    color: var(--text-color);
+}
+
+.video-thumbnail {
+    position: relative;
+    height: 0;
+    padding-top: 56.25%; /* 16:9 aspect ratio */
+    overflow: hidden;
+}
+
+.video-thumbnail img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.default-thumbnail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: white;
+}
+
+.video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.video-info {
+    padding: 12px;
+}
+
+.video-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.video-meta {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    color: var(--secondary-text);
+}
+
+.no-videos {
+    background-color: var(--card-color);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+}
+
+.no-videos p {
+    margin-bottom: 20px;
+    color: var(--secondary-text);
+}
+
+@media (max-width: 768px) {
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .profile-stats {
+        justify-content: center;
+    }
+    
+    .karma-actions, .profile-actions {
+        justify-content: center;
+    }
+    
+    .videos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+}
+</style>
+{% endblock %} 

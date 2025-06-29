@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Редактирование профиля{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Редактирование профиля</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.avatar.id_for_label }}" class="form-label fw-bold">Аватар</label>
+                            {{ form.avatar.errors }}
+                            <div class="input-group">
+                                {{ form.avatar }}
+                            </div>
+                            {% if user.userprofile.avatar %}
+                                <div class="mt-2">
+                                    <img src="{{ user.userprofile.avatar.url }}" alt="Current Avatar" class="img-thumbnail rounded-circle" style="max-width: 100px; max-height: 100px;">
+                                    <p class="small text-muted">Текущий аватар</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.bio.id_for_label }}" class="form-label fw-bold">О себе</label>
+                            {{ form.bio.errors }}
+                            <div class="input-group">
+                                {{ form.bio }}
+                            </div>
+                            <div class="form-text text-muted">Расскажите немного о себе. Эта информация будет отображаться на вашей странице профиля.</div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Сохранить изменения
+                            </button>
+                            <a href="{% url 'core:profile' username=user.username %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

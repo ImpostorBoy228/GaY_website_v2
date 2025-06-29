@@ -1,0 +1,173 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load view_count %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Все каналы</h1>
+    
+    <div class="channels-grid">
+        {% for channel in channels %}
+            <div class="channel-card {% if channel.is_owner %}my-channel{% endif %}">
+                <div class="channel-card-header">
+                    {% if channel.is_youtube_channel %}
+                        {% if channel.avatar %}
+                            <img src="{{ channel.avatar.url }}" alt="{{ channel.name }}" class="channel-avatar">
+                        {% elif channel.youtube_avatar_url %}
+                            <img src="{{ channel.youtube_avatar_url }}" alt="{{ channel.name }}" class="channel-avatar">
+                        {% else %}
+                            <div class="default-avatar">{{ channel.name|first }}</div>
+                        {% endif %}
+                    {% else %}
+                        {% if channel.avatar %}
+                            <img src="{{ channel.avatar.url }}" alt="{{ channel.name }}" class="channel-avatar">
+                        {% else %}
+                            <div class="default-avatar">{{ channel.name|first }}</div>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <div class="channel-info">
+                        <h3 class="channel-name">{{ channel.name }}</h3>
+                        <div class="channel-subscribers">
+                            {% if channel.is_youtube_channel %}
+                                {{ channel.youtube_subscribers|format_view_count }} подписчиков
+                            {% else %}
+                                {{ channel.subscribers.count|format_view_count }} подписчиков
+                            {% endif %}
+                        </div>
+                        {% if channel.is_youtube_channel %}
+                            <div class="channel-source">
+                                <i class="fab fa-youtube"></i> YouTube
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="channel-description">
+                    {{ channel.description|truncatechars:100 }}
+                </div>
+                
+                <div class="channel-actions">
+                    <a href="{% url 'core:channel_detail' channel_id=channel.id %}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Просмотр
+                    </a>
+                    
+                    {% if channel.is_owner %}
+                        <a href="{% url 'core:edit_channel' channel_id=channel.id %}" class="btn btn-secondary">
+                            <i class="fas fa-cog"></i> Управление
+                        </a>
+                    {% else %}
+                        {% if channel.is_subscribed %}
+                            <a href="{% url 'core:unsubscribe' channel_id=channel.id %}" class="btn btn-secondary">
+                                <i class="fas fa-bell-slash"></i> Отписаться
+                            </a>
+                        {% else %}
+                            <a href="{% url 'core:subscribe' channel_id=channel.id %}" class="btn btn-primary">
+                                <i class="fas fa-bell"></i> Подписаться
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="no-channels">
+                <p>Каналы не найдены.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .page-title {
+        margin-bottom: 30px;
+    }
+    
+    .channels-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .channel-card {
+        background-color: var(--card-color);
+        border-radius: 8px;
+        padding: 20px;
+        transition: transform 0.2s;
+    }
+    
+    .channel-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .my-channel {
+        border: 2px solid var(--primary-color);
+    }
+    
+    .channel-card-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .channel-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .default-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .channel-info {
+        flex: 1;
+    }
+    
+    .channel-name {
+        font-size: 18px;
+        margin-bottom: 5px;
+    }
+    
+    .channel-subscribers {
+        color: var(--secondary-text);
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    
+    .channel-source {
+        color: #ff0000;
+        font-size: 12px;
+    }
+    
+    .channel-description {
+        color: var(--secondary-text);
+        font-size: 14px;
+        margin-bottom: 20px;
+        min-height: 60px;
+    }
+    
+    .channel-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .no-channels {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 50px;
+        background-color: var(--card-color);
+        border-radius: 8px;
+        color: var(--secondary-text);
+    }
+</style>
+{% endblock %} 

@@ -1,0 +1,56 @@
+{% extends 'core/base.html' %}
+{% load view_count %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Результаты поиска{% if query %}: {{ query }}{% endif %}</h2>
+    
+    {% if videos %}
+        <div class="video-grid">
+            {% for video in videos %}
+                <div class="video-card">
+                    <a href="{% url 'core:video_detail' pk=video.pk %}" class="video-link">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="video-thumbnail">
+                        {% elif video.youtube_thumbnail_url %}
+                            <img src="{{ video.youtube_thumbnail_url }}" alt="{{ video.title }}" class="video-thumbnail">
+                        {% else %}
+                            <div class="video-thumbnail">
+                                <div class="thumbnail-placeholder">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="video-info">
+                            <h3 class="video-title">{{ video.title }}</h3>
+                            <div class="channel-info">
+                                {% if video.channel.avatar_url %}
+                                    <img src="{{ video.channel.avatar_url }}" alt="{{ video.channel.title }}" class="channel-avatar">
+                                {% else %}
+                                    <div class="channel-avatar">{{ video.channel.title|first|upper }}</div>
+                                {% endif %}
+                                <span class="channel-name">{{ video.channel.title }}</span>
+                            </div>
+                            <div class="video-meta">
+                                <span>{{ video.views|format_view_count }} просмотров</span>
+                                <span>{{ video.time_elapsed }}</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            {% if query %}
+                <i class="fas fa-search"></i>
+                <p>По запросу "{{ query }}" ничего не найдено</p>
+            {% else %}
+                <i class="fas fa-search"></i>
+                <p>Введите поисковый запрос</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,522 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Загрузить видео{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="upload-tabs">
+        <div class="tab {% if not request.GET.youtube %}active{% endif %}" data-tab="local">
+            <i class="fas fa-upload"></i> Загрузить с компьютера
+        </div>
+        <div class="tab {% if request.GET.youtube %}active{% endif %}" data-tab="youtube">
+            <i class="fab fa-youtube"></i> Импорт с YouTube
+        </div>
+    </div>
+
+    <div class="upload-content">
+        <!-- Локальная загрузка -->
+        <div id="local-upload" class="tab-content {% if not request.GET.youtube %}active{% endif %}">
+            <div class="upload-card">
+                <h2>Загрузить видео с компьютера</h2>
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <form method="post" enctype="multipart/form-data" id="upload-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="{{ form.title.id_for_label }}">Название видео*</label>
+                        {{ form.title }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.description.id_for_label }}">Описание</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.file.id_for_label }}">Видео файл*</label>
+                        <div class="file-upload">
+                            {{ form.file }}
+                            <div class="file-upload-info">
+                                <i class="fas fa-video"></i>
+                                <span>Выберите видео файл или перетащите его сюда</span>
+                                <small>Максимальный размер: 500MB</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.thumbnail.id_for_label }}">Превью (необязательно)</label>
+                        <div class="file-upload">
+                            {{ form.thumbnail }}
+                            <div class="file-upload-info">
+                                <i class="fas fa-image"></i>
+                                <span>Выберите изображение для превью</span>
+                                <small>Максимальный размер: 5MB</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Загрузить видео
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- YouTube импорт -->
+        <div id="youtube-upload" class="tab-content {% if request.GET.youtube %}active{% endif %}">
+            <div class="upload-card">
+                <h2>Импортировать видео с YouTube</h2>
+                {% if youtube_error %}
+                    <div class="alert alert-danger">{{ youtube_error }}</div>
+                {% endif %}
+                
+                <form method="post" id="youtube-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="youtube_import" value="1">
+                    
+                    <div class="form-group">
+                        <label for="{{ import_settings_form.import_mode.id_for_label }}">
+                            {{ import_settings_form.import_mode.label }}
+                        </label>
+                        {{ import_settings_form.import_mode }}
+                    </div>
+
+                    <div class="form-group mode-single">
+                        <label for="{{ import_settings_form.single_url.id_for_label }}">
+                            {{ import_settings_form.single_url.label }}
+                        </label>
+                        {{ import_settings_form.single_url }}
+                        <small class="form-text text-muted">
+                            Поддерживаются ссылки формата: youtube.com/watch?v=..., youtu.be/...
+                        </small>
+                    </div>
+
+                    <div class="form-group mode-multiple">
+                        <label for="{{ import_settings_form.multiple_urls.id_for_label }}">
+                            {{ import_settings_form.multiple_urls.label }}
+                        </label>
+                        {{ import_settings_form.multiple_urls }}
+                    </div>
+
+                    <div class="form-group mode-search">
+                        <label for="{{ import_settings_form.search_query.id_for_label }}">
+                            {{ import_settings_form.search_query.label }}
+                        </label>
+                        {{ import_settings_form.search_query }}
+                    </div>
+
+                    <div class="form-group mode-channel">
+                        <label for="{{ import_settings_form.channel_url.id_for_label }}">
+                            {{ import_settings_form.channel_url.label }}
+                        </label>
+                        {{ import_settings_form.channel_url }}
+                    </div>
+
+                    <div class="form-group form-check">
+                        {{ import_settings_form.use_filters }}
+                        <label class="form-check-label" for="{{ import_settings_form.use_filters.id_for_label }}">
+                            {{ import_settings_form.use_filters.label }}
+                        </label>
+                    </div>
+
+                    <div id="filters-container">
+                        <div class="form-group">
+                            <label for="{{ import_settings_form.min_views.id_for_label }}">{{ import_settings_form.min_views.label }}</label>
+                            {{ import_settings_form.min_views }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ import_settings_form.max_views.id_for_label }}">{{ import_settings_form.max_views.label }}</label>
+                            {{ import_settings_form.max_views }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ import_settings_form.min_duration.id_for_label }}">{{ import_settings_form.min_duration.label }}</label>
+                            {{ import_settings_form.min_duration }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ import_settings_form.max_duration.id_for_label }}">{{ import_settings_form.max_duration.label }}</label>
+                            {{ import_settings_form.max_duration }}
+                        </div>
+                    </div>
+
+                    <div class="form-group mode-multiple mode-search mode-channel">
+                        <label for="{{ import_settings_form.max_count.id_for_label }}">
+                            {{ import_settings_form.max_count.label }}
+                        </label>
+                        {{ import_settings_form.max_count }}
+                        <small class="form-text text-muted">0 = без лимита</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fab fa-youtube"></i> Импортировать видео
+                        </button>
+                        <small class="form-text text-muted mt-2">
+                            После нажатия кнопки видео начнет загружаться в фоновом режиме. Вы можете закрыть эту страницу.
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.upload-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.upload-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 14px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: var(--card-color, #1e1e1e);
+    color: var(--text-color, #ffffff);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tab:hover {
+    background-color: var(--primary-color-light, #ff4444);
+    transform: translateY(-2px);
+}
+
+.tab.active {
+    background-color: var(--primary-color, #ff0000);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.upload-card {
+    background-color: var(--card-color, #1e1e1e);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color, #444);
+}
+
+.upload-card h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--text-color);
+    font-size: 1.8rem;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--border-color, #444);
+    border-radius: 8px;
+    background-color: var(--input-color, #2a2a2a);
+    color: var(--text-color, #fff);
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color, #ff0000);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.25);
+}
+
+/* Улучшение стилей для выпадающих списков */
+.form-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23ffffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 12px) center;
+    padding-right: 35px;
+}
+
+.form-group select option {
+    background-color: var(--card-color, #1e1e1e);
+    color: var(--text-color, #ffffff);
+    padding: 10px;
+}
+
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.file-upload {
+    position: relative;
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: var(--input-color);
+}
+
+.file-upload:hover {
+    border-color: var(--primary-color);
+}
+
+.file-upload input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-upload-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+}
+
+.file-upload-info i {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.form-actions {
+    margin-top: 30px;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.alert-danger {
+    background-color: var(--danger-color-light);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #444);
+    margin-bottom: 15px;
+}
+
+.form-check-label {
+    margin-bottom: 0 !important;
+    font-weight: 500;
+}
+
+.form-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary-color, #ff0000);
+    cursor: pointer;
+}
+
+.mode-single, .mode-multiple, .mode-search, .mode-channel {
+    display: none;
+}
+
+#filters-container {
+    display: none;
+    border: 2px solid var(--border-color, #444);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    background-color: var(--card-color-light, #2a2a2a);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Табы
+    const tabs = document.querySelectorAll('.tab');
+    const contents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Убираем активный класс со всех табов и контента
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            
+            // Добавляем активный класс нужному табу и контенту
+            this.classList.add('active');
+            document.getElementById(tabId + '-upload').classList.add('active');
+        });
+    });
+    
+    // Загрузка файлов
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const fileUploadInfo = this.nextElementSibling;
+            const fileNameSpan = fileUploadInfo.querySelector('span');
+            
+            if (this.files.length > 0) {
+                const fileName = this.files[0].name;
+                fileNameSpan.textContent = fileName;
+                this.parentElement.classList.add('has-file');
+            } else {
+                if (this.id.includes('thumbnail')) {
+                    fileNameSpan.textContent = 'Выберите изображение для превью';
+                } else {
+                    fileNameSpan.textContent = 'Выберите видео файл или перетащите его сюда';
+                }
+                this.parentElement.classList.remove('has-file');
+            }
+        });
+    });
+    
+    // Drag and drop для файлов
+    const fileDropAreas = document.querySelectorAll('.file-upload');
+    
+    fileDropAreas.forEach(area => {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            area.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            area.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            area.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight() {
+            area.classList.add('highlight');
+        }
+        
+        function unhighlight() {
+            area.classList.remove('highlight');
+        }
+        
+        area.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const fileInput = area.querySelector('input[type="file"]');
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            fileInput.files = files;
+            
+            // Вызываем событие change, чтобы сработал обработчик выше
+            const event = new Event('change');
+            fileInput.dispatchEvent(event);
+        }
+    });
+    
+    // Управление режимами импорта с YouTube
+    const modeSelect = document.querySelector('[name="import_mode"]');
+    
+    function updateMode() {
+        if (!modeSelect) return;
+        
+        const selectedMode = modeSelect.value;
+        
+        document.querySelectorAll('.mode-single, .mode-multiple, .mode-search, .mode-channel').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        document.querySelectorAll('.mode-' + selectedMode).forEach(el => {
+            el.style.display = 'block';
+        });
+    }
+    
+    if (modeSelect) {
+        modeSelect.addEventListener("change", updateMode);
+        updateMode();
+    }
+    
+    // Управление фильтрами
+    const useFilters = document.querySelector('[name="use_filters"]');
+    
+    function updateFilters() {
+        if (!useFilters) return;
+        
+        if (useFilters.checked) {
+            document.getElementById('filters-container').style.display = 'block';
+        } else {
+            document.getElementById('filters-container').style.display = 'none';
+        }
+    }
+    
+    if (useFilters) {
+        useFilters.addEventListener("change", updateFilters);
+        updateFilters();
+    }
+});
+</script>
+{% endblock %}

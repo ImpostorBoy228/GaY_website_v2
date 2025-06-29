@@ -1,0 +1,10 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="ad-player">
+    <video controls autoplay style="width:100%; max-width:800px; display:block; margin:0 auto;">
+        <source src="{{ ad.video_file.url }}" type="video/mp4">
+        Ваш браузер не поддерживает видео.
+    </video>
+</div>
+{% endblock %} 

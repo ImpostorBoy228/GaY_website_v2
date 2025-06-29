@@ -1,0 +1,136 @@
+/* Spacing fixes for video detail page */
+
+/* Overall container spacing */
+.video-page-container {
+    margin: 0 auto !important;
+    gap: 16px !important;
+    padding: 0 12px !important;
+    margin-top: 10px !important;
+}
+
+.sidebar-content {
+    width: 30%;
+    transition: all 0.3s ease;
+    padding-top: 8px !important;
+}
+
+.main-content {
+    padding-top: 8px !important;
+}
+
+/* Video title alignment and spacing */
+.video-title {
+    margin-bottom: 14px !important;
+    padding-left: 0 !important;
+    font-size: 1.4rem !important;
+}
+
+/* Video player spacing */
+.video-player-wrapper {
+    margin-bottom: 16px !important;
+}
+
+/* Primary video info section */
+.video-primary-info {
+    padding: 0 0 12px 0 !important;
+    border-bottom: 1px solid #333 !important;
+    margin-bottom: 12px !important;
+}
+
+/* Video stats spacing */
+.video-stats {
+    gap: 16px !important;
+    margin-bottom: 12px !important;
+}
+
+/* Video actions spacing */
+.video-actions {
+    gap: 16px !important;
+}
+
+/* Recommended videos section */
+.recommended-videos {
+    margin-bottom: 16px !important;
+}
+
+.recommended-videos h3 {
+    margin-bottom: 14px !important;
+    padding-left: 0 !important;
+    font-size: 1.4rem !important;
+    margin-top: 0 !important;
+}
+
+.recommended-videos-list {
+    gap: 10px !important;
+}
+
+.recommended-video-info {
+    padding: 6px 10px !important;
+}
+
+.recommended-video-card {
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.recommended-video-link {
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+/* Channel info section */
+.channel-row {
+    margin-bottom: 14px !important;
+    padding: 0 !important;
+}
+
+/* Video details section */
+.video-details-section {
+    margin-top: 8px !important;
+}
+
+/* Video description */
+.video-description {
+    padding: 12px !important;
+    margin: 0 !important;
+}
+
+/* Video tags */
+.video-tags {
+    margin-top: 12px !important;
+    padding-top: 12px !important;
+}
+
+.tags-container {
+    margin-bottom: 12px !important;
+}
+
+/* Comments section */
+.comments-section {
+    margin-top: 20px !important;
+}
+
+.comments-section h2 {
+    margin-bottom: 16px !important;
+    padding-left: 0 !important;
+}
+
+.comment-form {
+    margin-bottom: 20px !important;
+    padding: 16px !important;
+}
+
+/* Other containers */
+.video-info-container {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+}
+
+/* Make consistent all section headers */
+h1, h2, h3, h4 {
+    padding-left: 0 !important;
+}

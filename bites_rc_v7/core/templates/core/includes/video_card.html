@@ -1,0 +1,192 @@
+{% load humanize %}
+
+<div class="video-card">
+    <a href="{% url 'core:video_detail' pk=video.pk %}" class="video-link">
+        <div class="video-thumbnail">
+            {% if video.thumbnail %}
+                <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+            {% elif video.youtube_thumbnail_url %}
+                <img src="{{ video.youtube_thumbnail_url }}" alt="{{ video.title }}">
+            {% else %}
+                <div class="thumbnail-placeholder">
+                    <i class="fas fa-video"></i>
+                </div>
+            {% endif %}
+            
+            {% if video.duration %}
+                <div class="video-duration">
+                    {% if video.youtube_duration %}
+                        {{ video.youtube_duration }}
+                    {% else %}
+                        {{ video.duration|default:"0:00" }}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="video-info">
+            <h3 class="video-title">{{ video.title }}</h3>
+            
+            <div class="video-meta">
+                <span>
+                    {% if video.is_youtube %}
+                        {{ video.youtube_views|intcomma }} просмотров
+                    {% else %}
+                        {{ video.views|intcomma }} просмотров
+                    {% endif %}
+                </span>
+                <span>{{ video.upload_date|timesince }} назад</span>
+            </div>
+            
+            {% if video.channel %}
+            <div class="channel-info">
+                {% if video.channel.avatar %}
+                    <img src="{{ video.channel.avatar.url }}" alt="{{ video.channel.name }}" class="channel-avatar">
+                {% elif video.channel.youtube_avatar_url %}
+                        <img src="{{ video.channel.youtube_avatar_url }}" alt="{{ video.channel.name }}" class="channel-avatar">
+                    {% else %}
+                        <div class="channel-avatar">{{ video.channel.name|first }}</div>
+                {% endif %}
+                <span class="channel-name">{{ video.channel.name }}</span>
+            </div>
+            {% else %}
+            <div class="channel-info">
+                {% if video.uploaded_by.profile.avatar %}
+                    <img src="{{ video.uploaded_by.profile.avatar.url }}" alt="{{ video.uploaded_by.username }}" class="channel-avatar">
+                {% else %}
+                    <div class="channel-avatar">{{ video.uploaded_by.username|first }}</div>
+                {% endif %}
+                <span class="channel-name">{{ video.uploaded_by.username }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="video-rating">
+                <span class="rating-badge">{{ video.absolute_rating|floatformat:0 }}</span>
+            </div>
+        </div>
+    </a>
+</div>
+
+<style>
+.video-card {
+    background-color: var(--card-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+.video-card:hover {
+    transform: translateY(-4px);
+}
+
+.video-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.video-thumbnail {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background-color: #000;
+    overflow: hidden;
+}
+
+.video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.thumbnail-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #222;
+    color: #666;
+    font-size: 32px;
+}
+
+.video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.video-info {
+    padding: 12px;
+}
+
+.video-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--text-color);
+}
+
+.video-meta {
+    display: flex;
+    justify-content: space-between;
+    color: var(--secondary-text);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.channel-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.channel-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.channel-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.channel-name {
+    font-size: 12px;
+    color: var(--secondary-text);
+}
+
+.video-rating {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.rating-badge {
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+</style> 

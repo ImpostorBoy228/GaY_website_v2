@@ -1,0 +1,223 @@
+{% extends 'core/base.html' %}
+{% load view_count %}
+
+{% block title %}Моя карма{% endblock %}
+
+{% block content %}
+    <div class="karma-container">
+        <h1>Карма и статистика</h1>
+        
+        <div class="karma-overview">
+            <div class="karma-rating">
+                <h2>Ваша карма</h2>
+                <div class="karma-value">{{ profile.karma|floatformat:2 }}</div>
+                <a href="{% url 'core:recalculate_karma' %}" class="button secondary">
+                    <i class="fas fa-sync"></i> Пересчитать
+                </a>
+            </div>
+            
+            <div class="stats-overview">
+                <h2>Общая статистика</h2>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Загруженные видео</div>
+                        <div class="stat-value">{{ stats.video_count }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Импортированные видео</div>
+                        <div class="stat-value">{{ stats.imported_count }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Просмотры</div>
+                        <div class="stat-value">{{ stats.total_views|format_view_count }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Лайки</div>
+                        <div class="stat-value">{{ stats.total_likes }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Дизлайки</div>
+                        <div class="stat-value">{{ stats.total_dislikes }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Мои комментарии</div>
+                        <div class="stat-value">{{ stats.comments_made }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Получено комментариев</div>
+                        <div class="stat-value">{{ stats.comments_received }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="karma-details">
+            <h2>Детали кармы</h2>
+            
+            {% if karma_stats.error %}
+                <div class="alert alert-warning">
+                    {{ karma_stats.error }}
+                </div>
+            {% else %}
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Лайков поставлено</div>
+                        <div class="detail-value">{{ karma_stats.likes_given }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Дизлайков поставлено</div>
+                        <div class="detail-value">{{ karma_stats.dislikes_given }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Комментариев оставлено</div>
+                        <div class="detail-value">{{ karma_stats.comments_made }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Средний сентимент комментариев</div>
+                        <div class="detail-value">{{ karma_stats.comments_sentiment }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Загруженных видео</div>
+                        <div class="detail-value">{{ karma_stats.video_count }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Импортированных видео</div>
+                        <div class="detail-value">{{ karma_stats.imported_count }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Получено лайков</div>
+                        <div class="detail-value">{{ karma_stats.total_likes }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Получено дизлайков</div>
+                        <div class="detail-value">{{ karma_stats.total_dislikes }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Средний сентимент видео</div>
+                        <div class="detail-value">{{ karma_stats.videos_sentiment }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Подписчиков</div>
+                        <div class="detail-value">{{ karma_stats.subscribers }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Возраст аккаунта (дни)</div>
+                        <div class="detail-value">{{ karma_stats.account_age }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Средний рейтинг лайков</div>
+                        <div class="detail-value">{{ karma_stats.avg_like_ratio }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Стабильность кармы</div>
+                        <div class="detail-value">{{ karma_stats.karma_stability }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <style>
+        .karma-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .karma-overview {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            gap: 30px;
+        }
+        
+        .karma-rating {
+            flex: 1;
+            background: var(--card-color);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .karma-value {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: var(--primary-color);
+        }
+        
+        .stats-overview {
+            flex: 2;
+            background: var(--card-color);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .karma-details {
+            background: var(--card-color);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .detail-item {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .detail-label {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+        
+        .detail-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .karma-overview {
+                flex-direction: column;
+            }
+        }
+    </style>
+{% endblock %} 

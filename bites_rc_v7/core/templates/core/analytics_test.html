@@ -1,0 +1,125 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Тест аналитики{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Тестирование API аналитики</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2>Тест API отслеживания перемоток видео</h2>
+        </div>
+        <div class="card-body">
+            <form id="seekTestForm">
+                <div class="form-group mb-3">
+                    <label for="videoId">ID видео:</label>
+                    <input type="number" class="form-control" id="videoId" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="fromPosition">Перемотка с позиции (секунды):</label>
+                    <input type="number" class="form-control" id="fromPosition" value="10" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="toPosition">Перемотка на позицию (секунды):</label>
+                    <input type="number" class="form-control" id="toPosition" value="30" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Отправить тестовую перемотку</button>
+            </form>
+            
+            <div class="mt-4">
+                <h3>Результат запроса:</h3>
+                <pre id="seekResult" class="bg-light p-3" style="max-height: 300px; overflow: auto;">Здесь будет результат запроса</pre>
+            </div>
+            
+            <div class="mt-4">
+                <h3>Альтернативные пути API:</h3>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="testPath('/api/analytics/track/seek/')">Путь 1: /api/analytics/track/seek/</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="testPath('/api/analytics/track_seek/')">Путь 2: /api/analytics/track_seek/</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="testPath('/api/analytics/track/seek')">Путь 3: /api/analytics/track/seek (без /)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCsrfToken() {
+    const cookieValue = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+    return cookieValue;
+}
+
+function showResult(result, status = 'info') {
+    const resultElement = document.getElementById('seekResult');
+    resultElement.className = `bg-light p-3 text-${status}`;
+    
+    if (typeof result === 'object') {
+        resultElement.textContent = JSON.stringify(result, null, 2);
+    } else {
+        resultElement.textContent = result;
+    }
+}
+
+// Тестирование различных путей API
+function testPath(path) {
+    const videoId = document.getElementById('videoId').value;
+    const fromPosition = document.getElementById('fromPosition').value;
+    const toPosition = document.getElementById('toPosition').value;
+    
+    if (!videoId) {
+        showResult("Пожалуйста, введите ID видео", "danger");
+        return;
+    }
+    
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+        showResult("CSRF токен не найден. Убедитесь, что вы вошли в систему.", "danger");
+        return;
+    }
+    
+    showResult(`Отправка запроса на ${path}...`);
+    
+    fetch(path, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            video_id: videoId,
+            from_position: fromPosition,
+            to_position: toPosition
+        }),
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        showResult(`Получен ответ от сервера: статус ${response.status}`);
+        
+        if (!response.ok) {
+            return response.text().then(text => {
+                showResult(`Ошибка: ${response.status}\nТекст ошибки: ${text}`, "danger");
+            });
+        } else {
+            return response.json().then(data => {
+                showResult(data, "success");
+            });
+        }
+    })
+    .catch(error => {
+        showResult(`Ошибка при отправке запроса: ${error}`, "danger");
+    });
+}
+
+// Обработка формы
+document.getElementById('seekTestForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const path = '/api/analytics/track/seek/';
+    testPath(path);
+});
+</script>
+{% endblock %}

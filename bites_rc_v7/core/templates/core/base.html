@@ -1,0 +1,661 @@
+{% load static %}
+{% load humanize %}
+{% load skins_tags %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bites vidéos</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'core/favicon.ico' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'core/css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+    {% skin_css 'VIDEO_GRID' %}
+    {% skin_css 'BASE_UI' %}
+    {% skin_css 'GLOBAL_BG' %}
+    <style>
+        
+        header { 
+            background-color: var(--background-color); 
+            border-bottom: 1px solid #333; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        
+        .logo { 
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .search-bar {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 20px;
+            position: relative;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            background-color: #222;
+            color: var(--text-color);
+        }
+        
+        .search-bar button {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+        }
+        
+        nav { 
+            display: flex;
+            align-items: center;
+        }
+        
+        nav a { 
+            color: var(--text-color); 
+            margin: 0 10px; 
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        nav a.nav-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-menu {
+            position: relative;
+            margin-left: 16px;
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            object-fit: cover;
+            background-color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: var(--card-color);
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            padding: 8px 0;
+            min-width: 200px;
+            display: none;
+            z-index: 10;
+        }
+        
+        .dropdown.show {
+            display: block;
+        }
+        
+        .dropdown a {
+            display: block;
+            padding: 8px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .container { 
+            max-width: 1700px; /* Увеличим максимальную ширину */
+            margin: var(--header-height) auto 0; 
+            padding: 20px 10px; /* Уменьшим боковые отступы */
+        }
+        
+        .messages {
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .message.success {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+        }
+        
+        .message.error {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+        }
+        
+        .message.warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+        }
+        
+        .sentiment-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        
+        .sentiment-badge.negative {
+            background-color: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+        }
+        
+        .sentiment-badge.neutral {
+            background-color: rgba(108, 117, 125, 0.2);
+            border: 1px solid #6c757d;
+        }
+        
+        .sentiment-badge.positive {
+            background-color: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .button:hover {
+            background-color: #cc0000;
+        }
+        
+        .button.secondary {
+            background-color: #333;
+        }
+        
+        .button.secondary:hover {
+            background-color: #444;
+        }
+
+        /* Profile page styles */
+        .profile-header {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: var(--primary-color);
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            background-color: var(--primary-color);
+        }
+
+        .profile-details h1 {
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: var(--text-color);
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 32px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--secondary-text);
+            margin-top: 4px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: var(--text-color);
+        }
+
+        .video-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .video-description {
+            color: var(--secondary-text);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            background-color: var(--card-color);
+            border-radius: 12px;
+            color: var(--secondary-text);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state p {
+            font-size: 18px;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background-color: var(--card-color);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #cc0000;
+        }
+
+        .btn-secondary {
+            background-color: #333;
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #444;
+        }
+
+        /* Alert styles */
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .alert-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .alert-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .alert-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Upload form styles */
+        .upload-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .upload-preview {
+            margin-bottom: 30px;
+        }
+
+        .video-preview, .thumbnail-preview {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+
+        .video-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumbnail-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--card-color);
+            color: var(--secondary-text);
+        }
+
+        .preview-placeholder i {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .file-upload {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .file-upload-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background-color: var(--card-color);
+            border: 2px dashed #444;
+            border-radius: 6px;
+            color: var(--secondary-text);
+            transition: all 0.2s;
+        }
+
+        .file-input:hover + .file-upload-btn {
+            border-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        .file-info {
+            margin-top: 8px;
+            color: var(--secondary-text);
+            font-size: 14px;
+        }
+
+        .upload-progress {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background-color: var(--card-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.2s;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            color: var(--secondary-text);
+            font-size: 14px;
+        }
+
+        .form-errors {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 30px;
+        }
+    </style>
+    <!-- Custom CSS for new elements and casino -->
+    <link rel="stylesheet" href="{% static 'core/css/new_elements.css' %}">
+    <link rel="stylesheet" href="{% static 'core/css/casino.css' %}">
+
+</head>
+<body>
+    <header>
+        <a href="{% url 'core:home' %}" class="logo">
+            <img src="{% static 'core/logo.jpg' %}" alt="bites vidéos" style="height: 32px;">
+        </a>
+        
+        <div class="search-bar">
+            <form action="{% url 'core:search' %}" method="get">
+                <input type="text" name="q" placeholder="Поиск видео...">
+                <button type="submit">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+        
+        <nav>
+            <div class="nav-links">
+                <a href="{% url 'core:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <i class="fas fa-home"></i> Главная
+                </a>
+                <a href="{% url 'core:ratings' %}" class="nav-link {% if request.resolver_match.url_name == 'ratings' %}active{% endif %}">
+                    <i class="fas fa-trophy"></i> Рейтинги
+                </a>
+                <a href="{% url 'core:user_karma' %}" class="nav-link {% if request.resolver_match.url_name == 'user_karma' %}active{% endif %}">
+                    <i class="fas fa-heart"></i> Карма
+                </a>
+                <a href="{% url 'core:ad_manager' %}" class="nav-link {% if request.resolver_match.url_name == 'ad_manager' %}active{% endif %}">
+                    <i class="fas fa-bullhorn"></i> Реклама
+                </a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'core:upload_video' %}" class="nav-link {% if request.resolver_match.url_name == 'upload_video' %}active{% endif %}">
+                    <i class="fas fa-upload"></i> Загрузить видео
+                </a>
+                {% endif %}
+            </div>
+            {% if user.is_authenticated %}
+                <div class="user-menu">
+                    <div class="avatar" id="avatarDropdownToggle">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+                        {% else %}
+                            {{ user.username|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="dropdown" id="avatarDropdownMenu">
+                        <a href="{% url 'core:profile' username=user.username %}"><i class="fas fa-user"></i> Профиль</a>
+                        {% with user_channel=user.channels.first %}
+                            {% if user_channel %}
+                                <a href="{% url 'core:channel_detail' channel_id=user_channel.pk %}"><i class="fas fa-tv"></i> Мой канал</a>
+                                <a href="{% url 'core:channel_videos' channel_id=user_channel.pk %}"><i class="fas fa-video"></i> Мои видео</a>
+                            {% else %}
+                                <a href="{% url 'core:create_channel' %}"><i class="fas fa-plus-square"></i> Создать канал</a>
+                            {% endif %}
+                        {% endwith %}
+                        <a href="{% url 'core:logout' %}"><i class="fas fa-sign-out-alt"></i> Выход</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{% url 'core:login' %}" class="nav-item"><i class="fas fa-sign-in-alt"></i> Вход</a>
+                <a href="{% url 'core:register' %}" class="nav-item"><i class="fas fa-user-plus"></i> Регистрация</a>
+            {% endif %}
+        </nav>
+    </header>
+    
+    <div class="container">
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="message {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {% block content %}
+        {% endblock %}
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const avatarDropdownToggle = document.getElementById('avatarDropdownToggle');
+            const avatarDropdownMenu = document.getElementById('avatarDropdownMenu');
+
+            if (avatarDropdownToggle) {
+                avatarDropdownToggle.addEventListener('click', function() {
+                    avatarDropdownMenu.classList.toggle('show');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!avatarDropdownToggle.contains(event.target) && !avatarDropdownMenu.contains(event.target)) {
+                        avatarDropdownMenu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Sidebar toggle for mobile (if you add a mobile sidebar later)
+            // const sidebarToggle = document.getElementById('sidebarToggle');
+            // const sidebar = document.getElementById('sidebar');
+            // if (sidebarToggle && sidebar) {
+            //     sidebarToggle.addEventListener('click', function() {
+            //         sidebar.classList.toggle('open');
+            //     });
+            // }
+        });
+    </script>
+    <script src="{% static 'core/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

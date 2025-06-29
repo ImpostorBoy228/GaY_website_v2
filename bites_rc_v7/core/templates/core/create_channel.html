@@ -1,0 +1,215 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <div class="channel-form-container">
+        <div class="form-header">
+            <h1>Создание канала</h1>
+            <p>Создайте свой канал, чтобы начать загружать видео</p>
+        </div>
+        
+        <div class="form-card">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">Название канала</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="form-errors">
+                            {% for error in form.name.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">Описание канала</label>
+                    {{ form.description }}
+                    <div class="form-help">Расскажите зрителям о своем канале</div>
+                    {% if form.description.errors %}
+                        <div class="form-errors">
+                            {% for error in form.description.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.avatar.id_for_label }}">Аватар канала</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="{{ form.avatar.name }}" id="{{ form.avatar.id_for_label }}" class="file-input" accept="image/*">
+                        <div class="file-input-custom">
+                            <span class="file-name">Выберите файл...</span>
+                            <button type="button" class="file-button">Обзор</button>
+                        </div>
+                    </div>
+                    <div class="form-help">Рекомендуемый размер: 500x500 пикселей</div>
+                    {% if form.avatar.errors %}
+                        <div class="form-errors">
+                            {% for error in form.avatar.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.banner.id_for_label }}">Баннер канала (шапка)</label>
+                    <div class="file-input-wrapper">
+                        <input type="file" name="{{ form.banner.name }}" id="{{ form.banner.id_for_label }}" class="file-input" accept="image/*">
+                        <div class="file-input-custom">
+                            <span class="file-name">Выберите файл...</span>
+                            <button type="button" class="file-button">Обзор</button>
+                        </div>
+                    </div>
+                    <div class="form-help">Рекомендуемый размер: 1500x500 пикселей</div>
+                    {% if form.banner.errors %}
+                        <div class="form-errors">
+                            {% for error in form.banner.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="button">
+                        <i class="fas fa-check"></i> Создать канал
+                    </button>
+                    <a href="{% url 'core:profile' username=user.username %}" class="button secondary">
+                        <i class="fas fa-times"></i> Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <style>
+        .channel-form-container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .form-header {
+            margin-bottom: 30px;
+        }
+        
+        .form-header p {
+            color: var(--secondary-text);
+            margin-top: 10px;
+        }
+        
+        .form-card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-color);
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-help {
+            font-size: 12px;
+            color: var(--secondary-text);
+            margin-top: 5px;
+        }
+        
+        .form-errors {
+            margin-top: 5px;
+        }
+        
+        .form-errors .error {
+            color: #dc3545;
+            font-size: 12px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+        
+        .file-input-custom {
+            display: flex;
+            border: 1px solid #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .file-name {
+            flex: 1;
+            padding: 10px 12px;
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--secondary-text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-button {
+            padding: 10px 15px;
+            background-color: #333;
+            color: var(--text-color);
+            border: none;
+            cursor: pointer;
+        }
+        
+        .file-button:hover {
+            background-color: #444;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+    </style>
+    
+    <script>
+        // Custom file input behavior
+        document.querySelectorAll('.file-input').forEach(input => {
+            const fileNameElement = input.parentElement.querySelector('.file-name');
+            const fileButton = input.parentElement.querySelector('.file-button');
+            
+            fileButton.addEventListener('click', () => {
+                input.click();
+            });
+            
+            input.addEventListener('change', () => {
+                if (input.files.length > 0) {
+                    fileNameElement.textContent = input.files[0].name;
+                } else {
+                    fileNameElement.textContent = 'Выберите файл...';
+                }
+            });
+        });
+    </script>
+{% endblock %} 

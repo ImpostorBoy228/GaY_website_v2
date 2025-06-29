@@ -1,0 +1,248 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load view_count %}
+
+{% block title %}Результаты поиска: {{ query|escape }}{% endblock %}
+
+{% block content %}
+    <div class="header-actions">
+        <h2>Результаты поиска по запросу: "{{ query|escape }}"</h2>
+    </div>
+
+    {% if results %}
+        <p class="mb-3">Найдено видео: {{ results|length }}</p>
+        <div class="video-grid">
+            {% for video in results %}
+                <div class="video-card">
+                    <a href="{% url 'core:video_detail' pk=video.pk %}">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title|escape }}" class="video-thumbnail">
+                        {% else %}
+                            <div class="video-thumbnail placeholder">
+                                <i class="fas fa-film"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="video-info">
+                            <h3 class="video-title">{{ video.title|escape }}</h3>
+                            
+                            <div class="video-meta">
+                                <span>{{ video.views|format_view_count }} просмотров</span>
+                                {# <span>{{ video.time_elapsed }}</span>  Time elapsed not available in search view context #}
+                            </div>
+                            
+                            <div class="channel-info">
+                                <div class="channel-info-left">
+                                    {% if video.channel %}
+                                        {% if video.channel.is_youtube_channel %}
+                                            {% if video.channel.avatar %}
+                                                <img src="{{ video.channel.avatar.url }}" alt="{{ video.channel.name|escape }}" class="channel-avatar">
+                                            {% elif video.channel.youtube_avatar_url %}
+                                                <img src="{{ video.channel.youtube_avatar_url }}" alt="{{ video.channel.name|escape }}" class="channel-avatar">
+                                            {% else %}
+                                                <div class="default-avatar">{{ video.channel.name|first|escape }}</div>
+                                            {% endif %}
+                                        {% else %}
+                                            {% if video.channel.avatar %}
+                                                <img src="{{ video.channel.avatar.url }}" alt="{{ video.channel.name|escape }}" class="channel-avatar">
+                                            {% else %}
+                                                <div class="default-avatar">{{ video.channel.name|first|escape }}</div>
+                                            {% endif %}
+                                        {% endif %}
+                                        <span class="channel-name">{{ video.channel.name|escape }}</span>
+                                    {% else %}
+                                        {% if video.uploaded_by.profile.avatar %}
+                                            <img src="{{ video.uploaded_by.profile.avatar.url }}" alt="{{ video.uploaded_by.username|escape }}" class="channel-avatar">
+                                        {% else %}
+                                            <div class="default-avatar">{{ video.uploaded_by.username|first|escape }}</div>
+                                        {% endif %}
+                                        <span class="channel-name">{{ video.uploaded_by.username|escape }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="video-rating">
+                                    <span class="rating-badge">{{ video.absolute_rating|floatformat:0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-videos">
+            <p>По вашему запросу "{{ query|escape }}" ничего не найдено.</p>
+            <p>Попробуйте изменить ваш запрос или <a href="{% url 'core:home' %}" class="button">вернуться на главную</a>.</p>
+        </div>
+    {% endif %}
+
+    {# Styles copied from home.html #}
+    <style>
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header-actions h2 {
+            margin: 0;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 0 auto 30px;
+            max-width: 1400px;
+        }
+        
+        .video-card {
+            position: relative;
+            background: rgba(25, 25, 25, 0.4);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: transform 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 4px;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .video-thumbnail {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            display: block;
+            /* border-radius: 4px; */ /* Removed to match home.html more closely if it's only on the card */
+        }
+        .video-thumbnail.placeholder {
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-size: 3rem;
+        }
+        
+        .video-info {
+            padding: 10px; /* Adjusted padding to match home.html example if different */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        .video-title {
+            font-size: 15px;
+            font-weight: 400;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            max-height: calc(1.3em * 2); /* Ensure max height based on line-height and clamp */
+            color: var(--text-color);
+        }
+        
+        .video-meta {
+            display: flex;
+            color: var(--secondary-text);
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .video-meta span {
+            margin-right: 12px;
+        }
+        
+        .channel-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* To push rating to the right */
+            margin-top: auto; /* Pushes to bottom of card if flex-grow is on video-info */
+        }
+
+        .channel-info-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .channel-avatar {
+            width: 28px; /* Slightly larger for better visibility */
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 8px;
+            object-fit: cover;
+            background-color: #444; /* Placeholder bg */
+        }
+        .default-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background-color: #555;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .channel-name {
+            font-size: 12px;
+            color: var(--secondary-text);
+            font-weight: 500;
+        }
+
+        .rating-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .no-videos {
+            grid-column: 1 / -1; /* Span all columns */
+            text-align: center;
+            padding: 40px;
+            background-color: var(--card-color);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .no-videos p {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        /* Ensure anchor tags with class button are styled if not globally defined */
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: var(--primary-hover-color);
+        }
+        .button.secondary {
+            background-color: var(--secondary-button-bg);
+            color: var(--secondary-button-text);
+        }
+        .button.secondary:hover {
+            background-color: var(--secondary-button-hover-bg);
+        }
+        .button i {
+            margin-right: 5px;
+        }
+    </style>
+{% endblock %} 

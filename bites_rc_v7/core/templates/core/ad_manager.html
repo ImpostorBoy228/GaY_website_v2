@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="header-actions">
+    <h2>Управление рекламой</h2>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="import-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="button">Добавить рекламу</button>
+</form>
+
+<table class="ads-table">
+    <thead>
+        <tr>
+            <th>Название</th>
+            <th>Частота</th>
+            <th>Активность</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ad in ads %}
+            <tr>
+                <td>{{ ad.title }}</td>
+                <td>{{ ad.frequency }}</td>
+                <td>{% if ad.active %}Да{% else %}Нет{% endif %}</td>
+                <td>
+                    <a href="{% url 'core:ad_edit' ad_id=ad.pk %}" class="button secondary">Изменить</a>
+                    <a href="{% url 'core:ad_delete' ad_id=ad.pk %}" class="button secondary" onclick="return confirm('Удалить эту рекламу?');">Удалить</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">Рекламы не найдены.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 
