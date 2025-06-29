@@ -1,0 +1,7 @@
+from django.apps import AppConfig
+
+
+class YoutubeApiConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'youtube_api'
+    verbose_name = 'YouTube API Integration'

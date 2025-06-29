@@ -1,0 +1,32 @@
+{% extends 'youtube_api/base.html' %}
+
+{% block title %}Import Video - YouTube Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Import YouTube Video</h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.video_url.label_tag }}
+                        {{ form.video_url }}
+                        {% if form.video_url.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.video_url.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Import Video
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
