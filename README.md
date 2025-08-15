@@ -110,3 +110,4 @@ MIT
 ---
 
 _Last backup: bites_rc_v7_
+_All backups are different by some elements of ui/ux. older versions, in my opinion are more stable by db"s and YouTube downloading
