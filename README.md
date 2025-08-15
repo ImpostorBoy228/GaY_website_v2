@@ -110,4 +110,5 @@ MIT
 ---
 
 _Last backup: bites_rc_v7_
-_All backups are different by some elements of ui/ux. older versions, in my opinion are more stable by db"s and YouTube downloading
+_All backups are different by some separate elements of ui/ux. older versions, in my opinion are more stable by db"s and YouTube downloading
+_for example, *version after I sucked a cock* has created after I sucked I cock and I was forced to recreate project from zero to hero(cringe)
